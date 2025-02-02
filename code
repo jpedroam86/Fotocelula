@@ -1,0 +1,607 @@
+#include <Wire.h>
+#include <LiquidCrystal.h>
+#include <esp_now.h>
+#include <WiFi.h>
+
+LiquidCrystal lcd(16,22,21,19,18,5);
+
+#define LED   34 
+#define butUp    27                                     //Botão para selecionar tela acima no digital 12
+#define butDown  14                                     //Botão para selecionar tela abaixo no digital 11
+#define butP     12                                     //Botão de ajuste mais no digital 10
+#define butM     13                                     //Botão de ajuste menos no digital 9
+#define buzzer   23
+
+// --- Protótipo das Funções Auxiliares ---
+void changeMenu();                                      //Função para modificar o menu atual
+void dispMenu();                                        //Função para mostrar o menu atual
+void data_hora();                                       //Função do menu1, data e hora
+void temperatura();                                     //Função do menu2, temperatura
+void lights();                                          //Função do menu3, acionamento de lampadas
+//void menu4();                                           //Função do menu4
+
+void start();
+void PausePlay();
+void Pause_Tempo_2();
+
+// --- Variáveis Globais ---
+char menu = 0x01;                                       //Variável para selecionar o menu
+char set1 = 0x00, set2 = 0x00;                          //Controle das lâmpadas
+boolean t_butUp, t_butDown, t_butP, t_butM;             //Flags para armazenar o estado dos botõesINT
+int horas = 0;
+int minutos = 0;
+int segundos = 0;
+int decimas = 00;
+int micro = 0;
+int mili = 0;
+
+
+long microsegundos = 0;
+long milisegundos = 0;
+int inicio = 2;
+int pausa = 4;
+int flag_pausar_tempo=1;
+int flag_pausar_tempo_2=1;
+int flag_pausa= 0;
+int flag_buzzer=0;
+
+typedef struct struct_message {    // minha struct **************************************************************
+    char a[32];
+    int b;
+    float c;
+    String d;
+    bool e;
+} struct_message;
+
+// Create a struct_message called myData
+struct_message myData;
+
+
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  memcpy(&myData, incomingData, sizeof(myData));
+
+
+  if(myData.b == 1){
+    Serial.println("ok");
+    flag_pausar_tempo=0;
+    }
+
+    if(myData.b == 2){
+    Serial.println("ok");
+    flag_pausar_tempo_2=0;
+    flag_pausa = 1;
+    }
+  
+  Serial.print("Bytes received: ");
+  Serial.println(len);
+  Serial.print("Char: ");
+  Serial.println(myData.a);
+  Serial.print("Int: ");
+  Serial.println(myData.b);
+  Serial.print("Float: ");
+  Serial.println(myData.c);
+  Serial.print("String: ");
+  Serial.println(myData.d);
+  Serial.print("Bool: ");
+  Serial.println(myData.e);
+  Serial.println();
+}
+void setup(){  
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED,LOW);
+  
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  pinMode(butUp, INPUT_PULLUP); 
+  pinMode(butDown, INPUT_PULLUP); 
+  pinMode(butP, INPUT_PULLUP); 
+  pinMode(butM, INPUT_PULLUP); 
+  pinMode(buzzer , OUTPUT);
+
+  
+  t_butUp   = 0x00;                                      //limpa flag do botão Up
+  t_butDown = 0x00;                                      //limpa flag do botão Down
+  t_butP    = 0x00;                                      //limpa flag do botão P
+  t_butM    = 0x00;                                      //limpa flag do botão M
+  
+  pinMode(inicio, INPUT);
+  digitalWrite(inicio, LOW);
+  pinMode(pausa, INPUT);
+  digitalWrite(pausa, LOW);
+  lcd.begin(16,2);
+  
+ if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+  esp_now_register_recv_cb(OnDataRecv);  
+ 
+}
+void loop(){
+
+   changeMenu();
+   dispMenu();
+ 
+}
+
+// --- Desenvolvimento das Funções Auxiliares ---
+void changeMenu()                                       //Modifica o menu atual
+{
+   if(!digitalRead(butUp))   t_butUp   = 0x01;          //Botão Up pressionado? Seta flag
+   if(!digitalRead(butDown)) t_butDown = 0x01;          //Botão Down pressionado? Seta flag
+      
+   if(digitalRead(butUp) && t_butUp)                    //Botão Up solto e flag setada?
+   {                                                    //Sim...
+      t_butUp = 0x00;                                   //Limpa flag
+      
+      lcd.clear();                                     //Limpa display
+      menu++;                                           //Incrementa menu
+      
+      if(menu > 0x03) menu = 0x01;                      //Se menu maior que 4, volta a ser 1
+   
+   } //end butUp
+   
+   if(digitalRead(butDown) && t_butDown)                //Botão Down solto e flag setada?
+   {                                                    //Sim...
+      t_butDown = 0x00;                                 //Limpa flag
+      
+      lcd.clear();                                     //Limpa display
+      menu--;                                           //Decrementa menu
+      
+      if(menu < 0x01) menu = 0x03;                      //Se menu menor que 1, volta a ser 4
+   
+   } //end butDown   
+
+} //end changeMenu
+
+void dispMenu()                                         //Mostra o menu atual
+{
+    switch(menu)                                        //Controle da variável menu
+    {
+       case 0x01:                                       //Caso 1
+             data_hora();                               
+             
+             break;                                     //break
+       case 0x02:                                       //Caso 2
+             temperatura();                             
+             
+             break;                                     //break
+       case 0x03:                                       //Caso 3
+             lights();                                  
+            
+             break;                                     //break
+   
+    } //end switch menu
+
+} //end dispMenu
+void data_hora()                                        //Data e Hora (menu1)
+{
+    menu:
+   lcd.setCursor(0,0);                                 //Posiciona cursor na coluna 1, linha 1
+   lcd.print("FIT Dev");                               //Imprime mensagem
+   lcd.setCursor(0,1);                                 //Posiciona cursor na coluna 1, linha 2
+   
+   // Desenvolver uma função de data e hora...
+   lcd.print("Para Atletas");                       //Mostrador (apenas ilustrativo......)
+
+} //end data_hora
+   
+
+void temperatura()                                      //Temperatura (menu2)
+{
+   lcd.setCursor(0,0);                                 //Posiciona cursor na coluna 1, linha 1
+   lcd.print("Mode 1 ");                           //Imprime mensagem
+   lcd.setCursor(0,1);                                 //Posiciona cursor na coluna 1, linha 1
+   lcd.print("Iniciar ...");                      //Imprime mensagem do menu 3  
+
+if(digitalRead(inicio) == LOW && flag_buzzer==0){ // rotina para o buzzer
+    digitalWrite(buzzer,HIGH);
+    delay(10);
+     digitalWrite(buzzer,LOW);
+     flag_buzzer=1;
+    lcd.clear();
+    while(1){
+
+      if(!digitalRead(butM))    t_butM    = 0x01; 
+  if(digitalRead(butM) && t_butM)                      //Botão P solto e flag setada?
+   { 
+    flag_buzzer=0;
+     t_butM = 0x00;
+     lcd.clear();
+    horas = 0;
+    minutos = 0;
+    segundos = 0;
+    decimas = 0;
+    micro = 0;
+    mili = 0;
+    break;
+    }
+       start();
+       PausePlay();
+       Pause_Tempo_2();
+      
+      }
+  }
+}
+ 
+void lights()                                           //Acionamento de lâmpadas (menu3)
+{  
+   lcd.setCursor(0,0);                                 //Posiciona cursor na coluna 1, linha 1
+   lcd.print("Mode 2 ");                      //Imprime mensagem do menu 3
+    lcd.setCursor(0,1);                                 //Posiciona cursor na coluna 1, linha 1
+   lcd.print("Posicion. Atleta");                      //Imprime mensagem do menu 3
+
+  if(!digitalRead(butP))    t_butP    = 0x01;          //Botão P pressionado? Seta flag
+           //Botão M pressionado? Seta flag
+  
+  if(digitalRead(butP) && t_butP)                      //Botão P solto e flag setada?
+   {                                                    //Sim...
+      t_butP = 0x00; 
+  while(1){
+  
+    if(digitalRead(inicio) == LOW){            //se o pino ler nível alto, zera as variáveis
+    horas = 0;
+    minutos = 0;
+    segundos = 0;
+    decimas = 0;
+    micro = 0;
+    mili = 0;
+    flag_buzzer=0;
+    lcd.clear();
+  }
+  if(digitalRead(inicio) == HIGH && flag_buzzer==0){ // rotina para o buzzer
+    digitalWrite(buzzer,HIGH);
+    delay(10);
+     digitalWrite(buzzer,LOW);
+     digitalWrite(LED,HIGH);
+     flag_buzzer=1;
+    lcd.clear();
+    } 
+ if(!digitalRead(butM))    t_butM    = 0x01; 
+  if(digitalRead(butM) && t_butM)                      //Botão P solto e flag setada?
+   { 
+    flag_buzzer=0;
+     t_butM = 0x00;
+     lcd.clear();
+    break;
+    }
+  
+  start();
+  PausePlay();
+  Pause_Tempo_2();
+    
+  }
+ }
+} //end lights
+void PausePlay(){
+   //botão Pause/Play 
+  if(flag_pausar_tempo == 0){//rotina de pausa e exibição da pausa
+    delay(20);
+   /// digitalWrite(LED,LOW);
+    ///while(digitalRead(pausa) == LOW);
+    lcd.setCursor(0,1);
+    if(minutos < 10){ lcd.print("0");}//se os minutos forem menor que 10, acrescenta um 0 na frente
+    lcd.print(minutos);
+    lcd.print(":");
+   if(segundos < 10){ lcd.print("0");}//se os segundos forem menor que 10, acrescenta um 0 na frente 
+    lcd.print(segundos);
+    lcd.print(":");
+    lcd.print(decimas);
+    lcd.print(micro);
+    flag_pausar_tempo =1;
+    delay(100);   
+  }  
+  
+}
+
+  void Pause_Tempo_2(){
+   //botão Pause/Play 
+  if(flag_pausar_tempo_2 == 0){//rotina de pausa e exibição da pausa
+    delay(20);
+    while(flag_pausa == 1){
+
+    if(!digitalRead(butM))    t_butM    = 0x01; 
+    if(digitalRead(butM) && t_butM)                      //Botão P solto e flag setada?
+   { 
+            flag_pausa == 0;
+             t_butM = 0x00;
+           break;
+    }
+   /// digitalWrite(LED,LOW);
+    lcd.setCursor(0,0);
+    if(minutos < 10){ lcd.print("0");}//se os minutos forem menor que 10, acrescenta um 0 na frente
+    lcd.print(minutos);
+    lcd.print(":");
+   if(segundos < 10){ lcd.print("0");}//se os segundos forem menor que 10, acrescenta um 0 na frente 
+    lcd.print(segundos);
+    lcd.print(":");
+    lcd.print(decimas);
+    lcd.print(micro);
+    flag_pausar_tempo_2 =1;
+    delay(100);
+    }
+  } 
+  
+  //break;
+  }
+void start(){
+
+milisegundos = millis();  
+ 
+   if(milisegundos % 10 == 0){  //Entrar apenas se tiver passado o décimo de segundo
+    micro++;
+      if(micro==10){
+       micro=0;
+       decimas++;     
+        if(decimas == 10){ //Quando passou 10 décimos de segundo, conta um segundo
+          decimas = 0;
+          segundos++;
+          }
+            if(segundos == 60){ 
+              // Após 60 segundos, conta um minuto
+              segundos = 0;
+              minutos++;
+                 }
+                if(minutos == 60){// Depois de 60 minutos, conta uma hora
+                  minutos = 0;
+                  horas++;
+    }
+    }  
+    //exibição no LCD
+    lcd.setCursor(3,0);
+   if(minutos < 10){//se os minutos forem menor que 10, acrescenta um 0 na frente
+     lcd.print("0");
+    }
+    lcd.print(minutos);
+    lcd.print(":");
+    lcd.setCursor(6,0);
+   if(segundos < 10){//se os segundos forem menor que 10, acrescenta um 0 na frente
+     lcd.print("0");
+    }
+    lcd.print(segundos);
+    lcd.print(":");
+    lcd.setCursor(9,0);
+    lcd.print(decimas);
+    lcd.setCursor(10,0);
+    lcd.print(micro);
+  }    
+  }  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+APÊNDICE B -  Código  utilizado no módulo 2 
+
+#include <WiFi.h>
+#include <esp_now.h>
+
+
+// REPLACE WITH YOUR RECEIVER MAC Address
+uint8_t broadcastAddress[] = {0x94, 0xb9, 0x7e, 0xc0, 0x42, 0xb4};
+
+// Structure example to send data
+// Must match the receiver structure
+typedef struct struct_message {
+  char a[32];
+  int b;
+  float c;
+  String d;
+  bool e;
+} struct_message;
+
+// Create a struct_message called myData
+struct_message myData;
+ 
+// callback when data is sent
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("\r\nStatus do último pacote de envio:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso na entrega" : "Falha na entrega");
+}
+
+const int LED =  22;
+int flag_count=0;
+bool flag_desligaLED =false;
+void sendData();
+
+void setup() {
+  // put your setup code here, to run once:
+
+  pinMode(2, INPUT);
+  pinMode(LED, OUTPUT);
+ Serial.begin(115200);
+ 
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(OnDataSent);
+  
+  // Register peer
+  esp_now_peer_info_t peerInfo;
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+
+
+   // Add peer        
+  if (esp_now_add_peer(&peerInfo) != ESP_OK){
+    Serial.println("Failed to add peer");
+    return;
+  }
+ digitalWrite(LED,LOW);
+}
+
+void loop() {
+ sendData();
+ if(flag_desligaLED == true)
+ {
+  delay(3000);
+  digitalWrite(LED,LOW);
+  flag_desligaLED = false;
+  }
+}
+
+void sendData(){
+
+  int button = digitalRead(2);
+   
+if(!button && flag_count==0){     
+  
+ // Set values to send
+  strcpy(myData.a, "THIS IS A CHAR");
+  myData.b = 1;
+  myData.c = 1.2;
+  myData.d = "Hello";
+  myData.e = false;
+
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
+  digitalWrite(LED,HIGH);
+   Serial.print("Enviado");
+  if (result == ESP_OK) {
+    Serial.println("ENVIANDO COM SUCESSO!");
+  }
+  else {
+    Serial.println("ERRO AO ENVIAR");
+  } 
+  flag_count=1;
+}
+ if(button && flag_count ==1){
+  Serial.println("Sistema desligado");
+      flag_count=0;
+      flag_desligaLED = true;
+    } 
+}
+
+APÊNDICE  C – Código utilizado no Módulo 3
+#include <WiFi.h>
+#include <esp_now.h>
+
+
+// REPLACE WITH YOUR RECEIVER MAC Address
+uint8_t broadcastAddress[] = {0x94, 0xb9, 0x7e, 0xc0, 0x42, 0xb4};
+
+// Structure example to send data
+// Must match the receiver structure
+typedef struct struct_message {
+  char a[32];
+  int b;
+  float c;
+  String d;
+  bool e;
+} struct_message;
+
+// Create a struct_message called myData
+struct_message myData;
+ 
+// callback when data is sent
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("\r\nStatus do último pacote de envio:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso na entrega" : "Falha na entrega");
+}
+
+bool flag_desligaLED =false;
+const int LED =  22;
+int flag_count=0;
+void sendData();
+
+void setup() {
+  // put your setup code here, to run once:
+pinMode(LED, OUTPUT);
+  pinMode(2, INPUT);
+ Serial.begin(115200);
+ 
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(OnDataSent);
+  
+  // Register peer
+  esp_now_peer_info_t peerInfo;
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+
+
+   // Add peer        
+  if (esp_now_add_peer(&peerInfo) != ESP_OK){
+    Serial.println("Failed to add peer");
+    return;
+  }
+ digitalWrite(LED,LOW);
+}
+
+void loop() {
+
+
+
+
+ sendData();
+if(flag_desligaLED == true)
+ {
+  delay(3000);
+  digitalWrite(LED,LOW);
+  flag_desligaLED = false;
+  }
+
+}
+
+void sendData() {
+
+  int button = digitalRead(2);
+
+   
+if(!button && flag_count==0){     
+   
+  flag_count=1;
+  delay(100);
+}
+
+ if(button && flag_count ==1){
+  // Set values to send
+  strcpy(myData.a, "THIS IS A CHAR");
+  myData.b = 2;
+  myData.c = 1.2;
+  myData.d = "Hello";
+  myData.e = false;
+
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
+   Serial.print("Enviado");
+   digitalWrite(LED,HIGH);
+  if (result == ESP_OK) {
+    Serial.println("ENVIANDO COM SUCESSO!");
+  }
+  else {
+    Serial.println("ERRO AO ENVIAR");
+  }
+
+      flag_count=0;
+      flag_desligaLED = true;
+    }  
+}
