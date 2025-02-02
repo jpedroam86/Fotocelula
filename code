@@ -6,28 +6,28 @@
 LiquidCrystal lcd(16,22,21,19,18,5);
 
 #define LED   34 
-#define butUp    27                                     //Botão para selecionar tela acima no digital 12
-#define butDown  14                                     //Botão para selecionar tela abaixo no digital 11
-#define butP     12                                     //Botão de ajuste mais no digital 10
-#define butM     13                                     //Botão de ajuste menos no digital 9
+#define butUp    27                                     //Button to select screen up on digital 12
+#define butDown  14                                     //Button to select screen down on digital 11
+#define butP     12                                     //Button for adjustment plus on digital 10
+#define butM     13                                     //Button for adjustment minus on digital 9
 #define buzzer   23
 
-// --- Protótipo das Funções Auxiliares ---
-void changeMenu();                                      //Função para modificar o menu atual
-void dispMenu();                                        //Função para mostrar o menu atual
-void data_hora();                                       //Função do menu1, data e hora
-void temperatura();                                     //Função do menu2, temperatura
-void lights();                                          //Função do menu3, acionamento de lampadas
-//void menu4();                                           //Função do menu4
+// --- Prototype of Auxiliary Functions ---
+void changeMenu();  //Function to modify the current menu
+void dispMenu();    //Function to display the current menu
+void data_hora();   //Function for menu1, date and time
+void temperatura(); //Function for menu2, temperature
+void lights();      //Function for menu3, lamp control
+//void menu4();     //Function for menu4
 
 void start();
 void PausePlay();
 void Pause_Tempo_2();
 
-// --- Variáveis Globais ---
-char menu = 0x01;                                       //Variável para selecionar o menu
-char set1 = 0x00, set2 = 0x00;                          //Controle das lâmpadas
-boolean t_butUp, t_butDown, t_butP, t_butM;             //Flags para armazenar o estado dos botõesINT
+// --- Global Variables ---
+char menu = 0x01;                                      //Variable to select the menu
+char set1 = 0x00, set2 = 0x00;                         //Control of the lamps
+boolean t_butUp, t_butDown, t_butP, t_butM;            //Flags to store the state of the buttons
 int horas = 0;
 int minutos = 0;
 int segundos = 0;
@@ -124,77 +124,78 @@ void loop(){
  
 }
 
-// --- Desenvolvimento das Funções Auxiliares ---
-void changeMenu()                                       //Modifica o menu atual
+// --- Development of Auxiliary Functions ---
+void changeMenu()  //Modifies the current menu
 {
-   if(!digitalRead(butUp))   t_butUp   = 0x01;          //Botão Up pressionado? Seta flag
-   if(!digitalRead(butDown)) t_butDown = 0x01;          //Botão Down pressionado? Seta flag
+   if(!digitalRead(butUp))   t_butUp   = 0x01;  //Button Up pressed? Set flag
+   if(!digitalRead(butDown)) t_butDown = 0x01;  //Button Down pressed? Set flag
       
-   if(digitalRead(butUp) && t_butUp)                    //Botão Up solto e flag setada?
-   {                                                    //Sim...
-      t_butUp = 0x00;                                   //Limpa flag
+   if(digitalRead(butUp) && t_butUp)  //Button Up released and flag set?
+   {  //Yes...
+      t_butUp = 0x00;  //Clear flag
       
-      lcd.clear();                                     //Limpa display
-      menu++;                                           //Incrementa menu
+      lcd.clear();  //Clear display
+      menu++;  //Increment menu
       
-      if(menu > 0x03) menu = 0x01;                      //Se menu maior que 4, volta a ser 1
+      if(menu > 0x03) menu = 0x01;  //If menu greater than 4, reset to 1
    
    } //end butUp
    
-   if(digitalRead(butDown) && t_butDown)                //Botão Down solto e flag setada?
-   {                                                    //Sim...
-      t_butDown = 0x00;                                 //Limpa flag
+   if(digitalRead(butDown) && t_butDown)  //Button Down released and flag set?
+   {  //Yes...
+      t_butDown = 0x00;  //Clear flag
       
-      lcd.clear();                                     //Limpa display
-      menu--;                                           //Decrementa menu
+      lcd.clear();  //Clear display
+      menu--;  //Decrement menu
       
-      if(menu < 0x01) menu = 0x03;                      //Se menu menor que 1, volta a ser 4
+      if(menu < 0x01) menu = 0x03;  //If menu less than 1, reset to 4
    
    } //end butDown   
 
 } //end changeMenu
 
-void dispMenu()                                         //Mostra o menu atual
+void dispMenu()  //Displays the current menu
 {
-    switch(menu)                                        //Controle da variável menu
+    switch(menu)  //Control of the menu variable
     {
-       case 0x01:                                       //Caso 1
+       case 0x01:  //Case 1
              data_hora();                               
              
-             break;                                     //break
-       case 0x02:                                       //Caso 2
+             break;  //break
+       case 0x02:  //Case 2
              temperatura();                             
              
-             break;                                     //break
-       case 0x03:                                       //Caso 3
+             break;  //break
+       case 0x03:  //Case 3
              lights();                                  
             
-             break;                                     //break
+             break;  //break
    
     } //end switch menu
 
 } //end dispMenu
-void data_hora()                                        //Data e Hora (menu1)
+
+void data_hora()  //Date and Time (menu1)
 {
     menu:
-   lcd.setCursor(0,0);                                 //Posiciona cursor na coluna 1, linha 1
-   lcd.print("FIT Dev");                               //Imprime mensagem
-   lcd.setCursor(0,1);                                 //Posiciona cursor na coluna 1, linha 2
+   lcd.setCursor(0,0);  //Set cursor to column 1, row 1
+   lcd.print("FIT Dev");  //Print message
+   lcd.setCursor(0,1);  //Set cursor to column 1, row 2
    
-   // Desenvolver uma função de data e hora...
-   lcd.print("Para Atletas");                       //Mostrador (apenas ilustrativo......)
+   // Develop a date and time function...
+   lcd.print("For Athletes");  //Display (illustrative only......)
 
 } //end data_hora
    
 
-void temperatura()                                      //Temperatura (menu2)
+void temperatura()  //Temperature (menu2)
 {
-   lcd.setCursor(0,0);                                 //Posiciona cursor na coluna 1, linha 1
-   lcd.print("Mode 1 ");                           //Imprime mensagem
-   lcd.setCursor(0,1);                                 //Posiciona cursor na coluna 1, linha 1
-   lcd.print("Iniciar ...");                      //Imprime mensagem do menu 3  
+   lcd.setCursor(0,0);  //Set cursor to column 1, row 1
+   lcd.print("Mode 1 ");  //Print message
+   lcd.setCursor(0,1);  //Set cursor to column 1, row 1
+   lcd.print("Start ...");  //Print message of menu 3  
 
-if(digitalRead(inicio) == LOW && flag_buzzer==0){ // rotina para o buzzer
+if(digitalRead(inicio) == LOW && flag_buzzer==0){  //Routine for the buzzer
     digitalWrite(buzzer,HIGH);
     delay(10);
      digitalWrite(buzzer,LOW);
@@ -203,17 +204,17 @@ if(digitalRead(inicio) == LOW && flag_buzzer==0){ // rotina para o buzzer
     while(1){
 
       if(!digitalRead(butM))    t_butM    = 0x01; 
-  if(digitalRead(butM) && t_butM)                      //Botão P solto e flag setada?
+  if(digitalRead(butM) && t_butM)  //Button P released and flag set?
    { 
     flag_buzzer=0;
      t_butM = 0x00;
      lcd.clear();
-    horas = 0;
-    minutos = 0;
-    segundos = 0;
-    decimas = 0;
+    hours = 0;
+    minutes = 0;
+    seconds = 0;
+    tenths = 0;
     micro = 0;
-    mili = 0;
+    milli = 0;
     break;
     }
        start();
@@ -222,34 +223,32 @@ if(digitalRead(inicio) == LOW && flag_buzzer==0){ // rotina para o buzzer
       
       }
   }
-}
- 
-void lights()                                           //Acionamento de lâmpadas (menu3)
+} 
+void lights()  //Lamp control (menu3)
 {  
-   lcd.setCursor(0,0);                                 //Posiciona cursor na coluna 1, linha 1
-   lcd.print("Mode 2 ");                      //Imprime mensagem do menu 3
-    lcd.setCursor(0,1);                                 //Posiciona cursor na coluna 1, linha 1
-   lcd.print("Posicion. Atleta");                      //Imprime mensagem do menu 3
+   lcd.setCursor(0,0);  //Set cursor to column 1, row 1
+   lcd.print("Mode 2 ");  //Print message of menu 3
+   lcd.setCursor(0,1);  //Set cursor to column 1, row 1
+   lcd.print("Athlete Position");  //Print message of menu 3
 
-  if(!digitalRead(butP))    t_butP    = 0x01;          //Botão P pressionado? Seta flag
-           //Botão M pressionado? Seta flag
+  if(!digitalRead(butP))    t_butP    = 0x01;  //Button P pressed? Set flag
   
-  if(digitalRead(butP) && t_butP)                      //Botão P solto e flag setada?
-   {                                                    //Sim...
+  if(digitalRead(butP) && t_butP)  //Button P released and flag set?
+   {  //Yes...
       t_butP = 0x00; 
   while(1){
   
-    if(digitalRead(inicio) == LOW){            //se o pino ler nível alto, zera as variáveis
-    horas = 0;
-    minutos = 0;
-    segundos = 0;
-    decimas = 0;
+    if(digitalRead(inicio) == LOW){  //if the pin reads high level, reset variables
+    hours = 0;
+    minutes = 0;
+    seconds = 0;
+    tenths = 0;
     micro = 0;
-    mili = 0;
+    milli = 0;
     flag_buzzer=0;
     lcd.clear();
   }
-  if(digitalRead(inicio) == HIGH && flag_buzzer==0){ // rotina para o buzzer
+  if(digitalRead(inicio) == HIGH && flag_buzzer==0){  //routine for the buzzer
     digitalWrite(buzzer,HIGH);
     delay(10);
      digitalWrite(buzzer,LOW);
@@ -258,7 +257,7 @@ void lights()                                           //Acionamento de lâmpad
     lcd.clear();
     } 
  if(!digitalRead(butM))    t_butM    = 0x01; 
-  if(digitalRead(butM) && t_butM)                      //Botão P solto e flag setada?
+  if(digitalRead(butM) && t_butM)  //Button P released and flag set?
    { 
     flag_buzzer=0;
      t_butM = 0x00;
@@ -274,16 +273,16 @@ void lights()                                           //Acionamento de lâmpad
  }
 } //end lights
 void PausePlay(){
-   //botão Pause/Play 
-  if(flag_pausar_tempo == 0){//rotina de pausa e exibição da pausa
+   //Pause/Play button 
+  if(flag_pausar_tempo == 0){//pause routine and display pause
     delay(20);
    /// digitalWrite(LED,LOW);
     ///while(digitalRead(pausa) == LOW);
     lcd.setCursor(0,1);
-    if(minutos < 10){ lcd.print("0");}//se os minutos forem menor que 10, acrescenta um 0 na frente
+    if(minutos < 10){ lcd.print("0");}//if minutes are less than 10, add a 0 in front
     lcd.print(minutos);
     lcd.print(":");
-   if(segundos < 10){ lcd.print("0");}//se os segundos forem menor que 10, acrescenta um 0 na frente 
+   if(segundos < 10){ lcd.print("0");}//if seconds are less than 10, add a 0 in front 
     lcd.print(segundos);
     lcd.print(":");
     lcd.print(decimas);
@@ -294,14 +293,14 @@ void PausePlay(){
   
 }
 
-  void Pause_Tempo_2(){
-   //botão Pause/Play 
-  if(flag_pausar_tempo_2 == 0){//rotina de pausa e exibição da pausa
+void Pause_Tempo_2(){
+   //Pause/Play button 
+  if(flag_pausar_tempo_2 == 0){//pause routine and display pause
     delay(20);
     while(flag_pausa == 1){
 
     if(!digitalRead(butM))    t_butM    = 0x01; 
-    if(digitalRead(butM) && t_butM)                      //Botão P solto e flag setada?
+    if(digitalRead(butM) && t_butM)  //Button P released and flag set?
    { 
             flag_pausa == 0;
              t_butM = 0x00;
@@ -309,10 +308,10 @@ void PausePlay(){
     }
    /// digitalWrite(LED,LOW);
     lcd.setCursor(0,0);
-    if(minutos < 10){ lcd.print("0");}//se os minutos forem menor que 10, acrescenta um 0 na frente
+    if(minutos < 10){ lcd.print("0");}//if minutes are less than 10, add a 0 in front
     lcd.print(minutos);
     lcd.print(":");
-   if(segundos < 10){ lcd.print("0");}//se os segundos forem menor que 10, acrescenta um 0 na frente 
+   if(segundos < 10){ lcd.print("0");}//if seconds are less than 10, add a 0 in front 
     lcd.print(segundos);
     lcd.print(":");
     lcd.print(decimas);
@@ -326,46 +325,46 @@ void PausePlay(){
   }
 void start(){
 
-milisegundos = millis();  
+milliseconds = millis();  
  
-   if(milisegundos % 10 == 0){  //Entrar apenas se tiver passado o décimo de segundo
+   if(milliseconds % 10 == 0){  // Enter only if a tenth of a second has passed
     micro++;
-      if(micro==10){
-       micro=0;
-       decimas++;     
-        if(decimas == 10){ //Quando passou 10 décimos de segundo, conta um segundo
-          decimas = 0;
-          segundos++;
+      if(micro == 10){
+       micro = 0;
+       tenths++;     
+        if(tenths == 10){ // When 10 tenths of a second have passed, count one second
+          tenths = 0;
+          seconds++;
           }
-            if(segundos == 60){ 
-              // Após 60 segundos, conta um minuto
-              segundos = 0;
-              minutos++;
+            if(seconds == 60){ 
+              // After 60 seconds, count one minute
+              seconds = 0;
+              minutes++;
                  }
-                if(minutos == 60){// Depois de 60 minutos, conta uma hora
-                  minutos = 0;
-                  horas++;
+                if(minutes == 60){ // After 60 minutes, count one hour
+                  minutes = 0;
+                  hours++;
     }
     }  
-    //exibição no LCD
+    // Display on LCD
     lcd.setCursor(3,0);
-   if(minutos < 10){//se os minutos forem menor que 10, acrescenta um 0 na frente
+   if(minutes < 10){ // If minutes are less than 10, add a 0 in front
      lcd.print("0");
     }
-    lcd.print(minutos);
+    lcd.print(minutes);
     lcd.print(":");
     lcd.setCursor(6,0);
-   if(segundos < 10){//se os segundos forem menor que 10, acrescenta um 0 na frente
+   if(seconds < 10){ // If seconds are less than 10, add a 0 in front
      lcd.print("0");
     }
-    lcd.print(segundos);
+    lcd.print(seconds);
     lcd.print(":");
     lcd.setCursor(9,0);
-    lcd.print(decimas);
+    lcd.print(tenths);
     lcd.setCursor(10,0);
     lcd.print(micro);
   }    
-  }  
+  } 
 
 
 
@@ -380,11 +379,10 @@ milisegundos = millis();
 
 
 
-APÊNDICE B -  Código  utilizado no módulo 2 
+APPENDIX B - Code used in module 2 (second pair)
 
 #include <WiFi.h>
 #include <esp_now.h>
-
 
 // REPLACE WITH YOUR RECEIVER MAC Address
 uint8_t broadcastAddress[] = {0x94, 0xb9, 0x7e, 0xc0, 0x42, 0xb4};
@@ -404,13 +402,13 @@ struct_message myData;
  
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nStatus do último pacote de envio:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso na entrega" : "Falha na entrega");
+  Serial.print("\r\nStatus of the last sent packet:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery success" : "Delivery failure");
 }
 
 const int LED =  22;
-int flag_count=0;
-bool flag_desligaLED =false;
+int flag_count = 0;
+bool flag_turnOffLED = false;
 void sendData();
 
 void setup() {
@@ -422,6 +420,7 @@ void setup() {
  
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
+
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -490,7 +489,7 @@ if(!button && flag_count==0){
     } 
 }
 
-APÊNDICE  C – Código utilizado no Módulo 3
+APPENDIX C – Code used in Module 3 (third pair)
 #include <WiFi.h>
 #include <esp_now.h>
 
@@ -513,8 +512,8 @@ struct_message myData;
  
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nStatus do último pacote de envio:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sucesso na entrega" : "Falha na entrega");
+  Serial.print("\r\nStatus of the last sent packet:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery success" : "Delivery failure");
 }
 
 bool flag_desligaLED =false;
@@ -590,18 +589,18 @@ if(!button && flag_count==0){
   myData.d = "Hello";
   myData.e = false;
 
-  // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
-   Serial.print("Enviado");
-   digitalWrite(LED,HIGH);
-  if (result == ESP_OK) {
-    Serial.println("ENVIANDO COM SUCESSO!");
-  }
-  else {
-    Serial.println("ERRO AO ENVIAR");
-  }
-
-      flag_count=0;
-      flag_desligaLED = true;
-    }  
+ // Send message via ESP-NOW
+esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
+Serial.print("Sent");
+digitalWrite(LED, HIGH);
+if (result == ESP_OK) {
+  Serial.println("SENDING SUCCESS!");
+} else {
+  Serial.println("ERROR SENDING");
 }
+
+flag_count = 0;
+flag_turnOffLED = true;
+}  
+}
+
